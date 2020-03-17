@@ -1,0 +1,30 @@
+perl parser2.pl 1 51GtjuDVFbGgpLKbppH4M8Uv4 V67ug41vUT5vRTOT7eCrIl8fsvcIB46IGoYOt5YQ71y0ANGHPg 30951060-euKfswXoGiwc3r4qSEnhTmSZO3dhGFf4XUhF4OK1g oBKtIvqKcQfE33o7nqySX9bSpAW2uepaS1r5JWnH1I262 U
+
+
+
+
+perl Makefile.PL --incpath='/usr/local/opt/openssl@1.1/include:/System/Volumes/Data/Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/System/Library/Perl/5.18/darwin-thread-multi-2level/CORE/' --libpath='/usr/local/opt/openssl@1.1/lib'
+
+
+
+export PATH="/System/Volumes/Data/Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/System/Library/Perl/5.18/darwin-thread-multi-2level/CORE/:/usr/local/Cellar/perl/5.26.0/lib/perl5/5.26.0/darwin-thread-multi-2level/CORE/EXTERN.h:/usr/local/opt/openssl@1.1/bin:/Library/Frameworks/Python.framework/Versions/3.8/bin:/Users/marcoantonicortesfernandez/opt/anaconda3/bin:/opt/miniconda3/condabin:/Library/Frameworks/Python.framework/Versions/3.8/bin:/Library/Frameworks/Python.framework/Versions/3.8/bin:/Users/marcoantonicortesfernandez/.yarn/bin:/usr/local/php5/bin:/usr/local/bin:/Users/marcoantonicortesfernandez/Library/Oracle/instantclient_12_1:/usr/local/mysql/bin:/Users/marcoantonicortesfernandez/anaconda/bin:/Users/marcoantonicortesfernandez/anaconda3/bin:/Users/marcoantonicortesfernandez/miniconda3/bin:/Library/Frameworks/Python.framework/Versions/3.5/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/TeX/texbin:/usr/local/go/bin:/opt/X11/bin"
+
+
+
+/Library/Developer/CommandLineTools/SDKs/MacOSX10.15.sdk/System/Library/Perl/5.18/darwin-thread-multi-2level/CORE/perl.h
+
+
+
+/usr/local/opt/openssl@1.1/include
+
+
+perl Makefile.PL --incpath="/usr/local/opt/openssl/include/openssl/“  --libpath="/usr/local/opt/openssl/lib/"
+
+
+ sudo OPENSSL_INCLUDE=/usr/local/opt/openssl/include OPENSSL_LIB=/usr/local/opt/openssl/lib PERL_MM_USE_DEFAULT=1 perl -MCPAN -e "install Crypt::SSLeay"
+
+ perl Makefile.PL --incpath /usr/local/opt/openssl/include --libpath /usr/local/opt/openssl/lib
+
+
+perl Makefile.PL --incpath /usr/local/ActivePerl-5.28/lib/perl5/5.28.1/darwin-thread-multi-2level/CORE/  
+ export CPATH=/usr/local/ActivePerl-5.28/lib/perl5/5.28.1/darwin-thread-multi-2level/CORE/
