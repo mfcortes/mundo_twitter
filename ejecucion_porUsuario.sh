@@ -12,7 +12,7 @@ while [ true ]
 do
     echo "**INICIO******perl parser2.pl ${string} ${tipo_criterio}: `date`" >> ${arch_log}
     
-    perl curl_opinion.pl 
+    #perl curl_opinion.pl 
     perl parser2.pl ${string} ${tipo_criterio}>> ${arch_log} 
     
     if [ ! -s ${arch_adm} ]

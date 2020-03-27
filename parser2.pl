@@ -5,7 +5,17 @@ use DB_File;
 use DateTime;
 use Config::Simple;
 use IO::Socket::SSL;
-#use LWP::Protocol::https;
+
+use JSON;
+use LWP::UserAgent;
+#use SOAP::Lite;
+use HTTP::Request;
+ use Encode;
+
+
+
+
+
 
 $, = "\t", $\ = "\n";
 
@@ -13,6 +23,48 @@ my %memo;
 my %variablesini;
 my $cuenta=0;
 my $total=0;
+
+
+sub analizaSentimiento()
+{
+	$texto_analizar=Encode::encode("utf8", $_[1-1]);
+
+
+	my $urlSentimiento = 'https://api.meaningcloud.com/sentiment-2.1';
+	my $ua = LWP::UserAgent->new;
+	my $req = HTTP::Request->new(POST => $urlSentimiento);
+	$req->content_type('application/x-www-form-urlencoded; charset=utf-8');
+	
+	my $opinion = -1;
+	my $querySentimiento = 'key=03251e2ff7438ac2c5d99409f5648180&lang=es&txt='.$texto_analizar.'&model=general';
+
+	#print (Dumper(\$querySentimiento));
+	
+	$req->content($querySentimiento);
+
+	my $response = $ua->request($req);
+	my $content = $response->content(); #contenido de la respuesta
+	
+	#print (Dumper(\$content));
+
+	my $perl_scalar = JSON->new->utf8->decode($content);
+	if ($perl_scalar->{agreement} eq "AGREEMENT")
+	{
+		$opinion=1;
+	}
+
+	if ($perl_scalar->{agreement} eq "DISAGREEMENT")
+	{
+		$opinion=0;
+	}
+	
+
+	#printf("Opinion : ---%s----%s (%d)---%s\n",$texto_analizar, $perl_scalar->{agreement},$opinion , $perl_scalar->{confidence});
+
+	return ($opinion  , $perl_scalar->{confidence})
+	
+
+}
 
 sub  trim { 
 	my $s = shift; 
@@ -102,11 +154,13 @@ sub conecta_mysql()
 	#connect to MySQL database
 	my $dbh   = DBI->connect ("DBI:mysql:database=$db:host=$host",
     	                       $user,
-        	                   $password) 
+        	                   $password
+							   ) 
             	               or die "Can't connect to database: $DBI::errstr\n";
             	               
-    $dbh->do('SET NAMES utf8');
-	$dbh->{'mysql_enable_utf8'} = 1;        	               
+	#$self->dbh->do(“SET NAMES ‘utf8mb4’”)						   
+    $dbh->do('SET NAMES utf8mb4'); 
+	$dbh->{'mysql_enable_utf8mb4'} = 1;        	               
 
 	return $dbh;
 }
@@ -144,7 +198,6 @@ sub registraDB()
 	$user_twits=$_[17-1];
 	
 	
-	
 	$llave=$criterio."|".$key;
 	
 	#$flag_error=0;
@@ -168,15 +221,18 @@ sub registraDB()
     
     
     chomp($datos_db);
+	#print "$datos_db";
     $total++;
     #print "llave-DATA DB |$llave - $|$datos_db\n";
     if (!exists($memo{$llave}))
     {
 		#inserta El NUevo Twits
 		$memo{$llave}=$datos_db;
+		($opinion, $porcentajecertesa)=&analizaSentimiento($mensaje);
+
 		if ($tipo_consulta eq "U" || $tipo_consulta eq "u")
 		{
-			$query = "insert into twits 	(idtwits,usuarios_nickName,estado,descTwits,fechatwits,esretwits,retwitscount,favoritecount,respuestatwitsoriginal,id_respuestatwitsoriginal,lat_loc,long_loc,type_loc,url_imagen,follower_count,fechainsert) values (\"$key\",\"$criterio\",\"ing\",\"$mensaje\",STR_TO_DATE(\"$fecha_at\",\"%a %b %d %H:%i:%s %Y\"),$es_retwits,$q_retwits,$favorite_count,\"$nick_twitsoriginal\",\"$id_respuestatwitsoriginal\",\"$latitud_location\",\"$longitud_location\",\"$tipo_location\",\"$url_imagen\",$follower_count,now())";
+			$query = "insert into twits 	(idtwits,usuarios_nickName,estado,descTwits,fechatwits,esretwits,retwitscount,favoritecount,respuestatwitsoriginal,id_respuestatwitsoriginal,lat_loc,long_loc,type_loc,url_imagen,follower_count,fechainsert,sentimiento, certsentimiento) values (\"$key\",\"$criterio\",\"ing\",\"$mensaje\",STR_TO_DATE(\"$fecha_at\",\"%a %b %d %H:%i:%s %Y\"),$es_retwits,$q_retwits,$favorite_count,\"$nick_twitsoriginal\",\"$id_respuestatwitsoriginal\",\"$latitud_location\",\"$longitud_location\",\"$tipo_location\",\"$url_imagen\",$follower_count,now(),$opinion,$porcentajecertesa)";
 			#if ($flag_error==1)
 			#{
 			#	print (Dumper(\$query));
@@ -184,7 +240,7 @@ sub registraDB()
 		}
 		else
 		{
-			$query = "insert into twits_hashtag 	(id_user_twits,idtwits,hashtag_hashtag,estado,descTwits,fechatwits,esretwits,retwitscount,favoritecount,respuestatwitsoriginal,id_respuestatwitsoriginal,lat_loc,long_loc,type_loc,url_imagen,follower_count,fechainsert) values (\"$user_twits\",\"$key\",\"$criterio\",\"ing\",\"$mensaje\",STR_TO_DATE(\"$fecha_at\",\"%a %b %d %H:%i:%s %Y\"),$es_retwits,$q_retwits,$favorite_count,\"$nick_twitsoriginal\",\"$id_respuestatwitsoriginal\",\"$latitud_location\",\"$longitud_location\",\"$tipo_location\",\"$url_imagen\",$follower_count,now())";
+			$query = "insert into twits_hashtag 	(id_user_twits,idtwits,hashtag_hashtag,estado,descTwits,fechatwits,esretwits,retwitscount,favoritecount,respuestatwitsoriginal,id_respuestatwitsoriginal,lat_loc,long_loc,type_loc,url_imagen,follower_count,fechainsert,sentimiento, certsentimiento) values (\"$user_twits\",\"$key\",\"$criterio\",\"ing\",\"$mensaje\",STR_TO_DATE(\"$fecha_at\",\"%a %b %d %H:%i:%s %Y\"),$es_retwits,$q_retwits,$favorite_count,\"$nick_twitsoriginal\",\"$id_respuestatwitsoriginal\",\"$latitud_location\",\"$longitud_location\",\"$tipo_location\",\"$url_imagen\",$follower_count,now(),$opinion,$porcentajecertesa)";
 		
 		}
 		#printf "%s\n",$query;
@@ -202,7 +258,7 @@ sub registraDB()
 		$q_favoriteCount=$arr_data[4-1];
 		if ($q_retwits!=$q_retEnDB || $favorite_count!=$q_favoriteCount)
 		{
-			printf "Registro Ya ingresado [%s] y con DIFERENTE numero de Retwits [%d -> %d] o Favorite Count [%d -> %d]\n",$key,$q_retEnDB,$q_retwits,$q_favoriteCount,$favorite_count;
+			#printf "Registro Ya ingresado [%s] y con DIFERENTE numero de Retwits [%d -> %d] o Favorite Count [%d -> %d]\n",$key,$q_retEnDB,$q_retwits,$q_favoriteCount,$favorite_count;
 			$memo{$llave}=$datos_db;
 			$query = "update twits SET retwitscount=$q_retwits,favoritecount=$q_favoriteCount where idtwits=\"$key\"";
 			$ingresa = $connection->prepare($query);
@@ -326,7 +382,7 @@ my $t = Net::Twitter->new(
         
             #my $tweet = $twitter->show_status($status->{'id'});
     		my $identity = $status->{id};              # Tweet ID
-    		
+			#print "$identity\n";
     		my $s = $status->{text};       # Tweeted Text
     		
     		#$s =~ s/[^[:ascii:]]+//g;      # Strip Non-ASCII Encoded Characters
@@ -339,9 +395,8 @@ my $t = Net::Twitter->new(
     		
     		
 			#$llave_tipo_consulta=$status->{user}->{screen_name}
-    	
-    		&registraDB($status->{id},$param_consulta,$s,$dbh,$fecha_fta,$status->{retweet_count},$rt,$status->{favorite_count},$status->{in_reply_to_screen_name},$status->{in_reply_to_status_id},$status->{coordinates}->{coordinates}[0],$status->{coordinates}->{coordinates}[1],$status->{coordinates}->{type},$status->{user}->{profile_image_url_https},$status->{user}->{followers_count},$tipo_proceso,$status->{user}->{screen_name});
-    		
+			&registraDB($status->{id},$param_consulta,$s,$dbh,$fecha_fta,$status->{retweet_count},$rt,$status->{favorite_count},$status->{in_reply_to_screen_name},$status->{in_reply_to_status_id},$status->{coordinates}->{coordinates}[0],$status->{coordinates}->{coordinates}[1],$status->{coordinates}->{type},$status->{user}->{profile_image_url_https},$status->{user}->{followers_count},$tipo_proceso,$status->{user}->{screen_name});
+			
 		}
 	}
 	$lista_consultar->finish();	
