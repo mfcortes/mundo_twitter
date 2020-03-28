@@ -88,11 +88,15 @@ sub esRT()
 sub registraTwits()
 {
 	$connection=$_[1-1];
-	
-	$consumer_key = q(eVHwpP1pdCxoViQxL6XK9TaN5);
-	$consumer_secret = q(nriMp2IFvQ2WlwEHOERVulgUCu8xwVrkGEAABexmIDWZ3QNaio);
-	$access_token = q(3234203725-U41dyNuq3ea1xYl5rSciUsz8gDeQFWutMfdw0ju);
-	$access_token_secret = q(YSuXIswRLik34cOg7V951XbziqMBjbQFeVR71f0AroUDu);
+	$consumer_key = $_[2-1];
+	$consumer_secret = $_[3-1];
+	$access_token = $_[4-1];
+	$access_token_secret = $_[5-1] ;
+
+	#$consumer_key = q(eVHwpP1pdCxoViQxL6XK9TaN5);
+	#$consumer_secret = q(nriMp2IFvQ2WlwEHOERVulgUCu8xwVrkGEAABexmIDWZ3QNaio);
+	#$access_token = q(3234203725-U41dyNuq3ea1xYl5rSciUsz8gDeQFWutMfdw0ju);
+	#$access_token_secret = q(YSuXIswRLik34cOg7V951XbziqMBjbQFeVR71f0AroUDu);
 
 	my $t = Net::Twitter->new(
     	traits              => [qw/API::RESTv1_1/],
@@ -187,10 +191,15 @@ sub close_mysql()
 	$_[1-1]->disconnect or warn "Disconnection error: $DBI::errstr\n";
 }
 
+$consumer_key =$ARGV[1-1]; 
+$consumer_secret = $ARGV[2-1];
+$access_token = $ARGV[3-1];
+$access_token_secret = $ARGV[4-1];
+
 &carga_ini();
 
 $dbh=&conecta_mysql();
-&registraTwits($dbh);
+&registraTwits($dbh,$consumer_key,$consumer_secret,$access_token, access_token_secret);
 &close_mysql($dbh);
 
 
