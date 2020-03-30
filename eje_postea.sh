@@ -1,4 +1,4 @@
-id_proceso=$1
+id_proceso=2
 
 Fecha=`date "+%Y%m%d"`
 arch_log="log/Log_Postea_${Fecha}.log"
@@ -13,7 +13,7 @@ while [ true ]
 do
     echo "perl posteaTwits.pl : `date`" >>  $arch_log
     perl analitic1.pl >> $arch_log
-    perl posteaTwits.pl $string >> $arch_log
+    perl posteaTwits2.pl $string >> $arch_log
     
     if [ ! -s ${arch_adm} ]
     then

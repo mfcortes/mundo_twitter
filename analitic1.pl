@@ -75,8 +75,8 @@ sub close_mysql()
 	$dbh=&conecta_mysql();
 
 	#my $sql_data="select descTwits from twits where fechatwits > DATE_SUB(now(), INTERVAL 120 MINUTE)";
- 	my $sql_data="select descTwits,retwitscount+favoritecount from twits as t,usuarios as u where t.usuarios_nickName=u.nickName and u.monitoreo=1 and t.estado!=\"pub\" and fechatwits > DATE_SUB(now(), INTERVAL 20 MINUTE)";
-
+ 	#my $sql_data="select descTwits,retwitscount+favoritecount from twits as t,usuarios as u where t.usuarios_nickName=u.nickName and u.monitoreo=1 and t.estado!=\"pub\" and fechatwits > DATE_SUB(now(), INTERVAL 120 MINUTE)";
+	my $sql_data="select descTwits,retwitscount+favoritecount from twits_hashtag as t where t.estado!=\"pub\" and fechatwits > DATE_SUB(now(), INTERVAL 120 MINUTE)";
 
  	$twits = $dbh->prepare($sql_data);
 	$twits->execute();
@@ -125,7 +125,8 @@ sub close_mysql()
 	
 	printf "Analisis Twits %s : %.0f\n",$desc_max,$q_max{$desc_max};
 	
-	my $sql_exploara="update twits,usuarios set twits.estado=\"pub\" where twits.usuarios_nickName=usuarios.nickName and usuarios.monitoreo=1 and twits.fechatwits > DATE_SUB(now(), INTERVAL 120 MINUTE) and twits.descTwits like '%$desc_max%'";
+	
+	my $sql_exploara="update twits_hashtag set twits_hashtag.estado=\"pub\" where  twits_hashtag.estado!=\"pub\" and twits_hashtag.fechatwits > DATE_SUB(now(), INTERVAL 120 MINUTE) and twits_hashtag.descTwits like '%$desc_max%'";
    
     $twits_explo = $dbh->prepare($sql_exploara);
 	$twits_explo->execute();

@@ -12,11 +12,6 @@ use LWP::UserAgent;
 use HTTP::Request;
  use Encode;
 
-
-
-
-
-
 $, = "\t", $\ = "\n";
 
 my %memo;

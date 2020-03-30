@@ -1,5 +1,4 @@
-use utf8;
-use Encode;
+#use Encode;
 use Scalar::Util 'blessed';
 use Net::Twitter;
 use Data::Dumper;
@@ -8,6 +7,7 @@ use DB_File;
 use DateTime;
 use Encode qw/encode_utf8/;
 use Config::Simple;
+use IO::Socket::SSL;
 
 
 $, = "\t", $\ = "\n";
@@ -93,10 +93,11 @@ sub registraTwits()
 	$access_token = $_[4-1];
 	$access_token_secret = $_[5-1] ;
 
-	#$consumer_key = q(eVHwpP1pdCxoViQxL6XK9TaN5);
-	#$consumer_secret = q(nriMp2IFvQ2WlwEHOERVulgUCu8xwVrkGEAABexmIDWZ3QNaio);
-	#$access_token = q(3234203725-U41dyNuq3ea1xYl5rSciUsz8gDeQFWutMfdw0ju);
-	#$access_token_secret = q(YSuXIswRLik34cOg7V951XbziqMBjbQFeVR71f0AroUDu);
+
+	print "$consumer_key \n";
+	print "$consumer_secret \n";
+	print "$access_token \n";
+	print "$access_token_secret \n";
 
 	my $t = Net::Twitter->new(
     	traits              => [qw/API::RESTv1_1/],
@@ -110,7 +111,7 @@ sub registraTwits()
 	#Se armo especialmente para Huelga entel 
 	#$query = "select idtwits, descTwits from twits as t,usuarios as u where t.usuarios_nickName=u.nickName and u.monitoreo=1 and  descTwits like \"%copa%\" and estado!=\"pub\" and errorpublicar is null";
 	
-	$query = "select idtwits, descTwits from twits as t,usuarios as u where t.usuarios_nickName=u.nickName and u.monitoreo=1 and t.estado=\"pub\" and errorpublicar is null";
+	$query = "select idtwits, descTwits from twits_hashtag as t where t.estado=\"pub\" and errorpublicar is null";
 	
 	
 	$sth = $connection->prepare($query);
@@ -126,6 +127,7 @@ sub registraTwits()
 		#$s =~ s/[^[:ascii:]]+//g;      # Strip Non-ASCII Encoded Characters
     	#$s =~ s/"/\\"/g;               # Strip Non-ASCII Encoded Characters
     	#$s =~ s/'/\\'/g;               # Strip Non-ASCII Encoded Characters
+		$s=Encode::encode("utf8", $s);
     	$s=&trim($s);
     	if (&esRT($s) == 1)
     	{
@@ -134,18 +136,19 @@ sub registraTwits()
     	}
     	
     	$largo_str=length($s);
-    	$marca="#HAL ";
+    	$marca="#SOMOSBIGDATA ";
     	if ($largo_str<100-length($marca))
     	{
     	   $s=$marca.$s;
     	}
     	#$s = encode('utf-8',$s);
+		
     	printf("Postea %s: [%s] : %d\n",$id,$s,$largo_str);
     	
     	if ( my $err = $@ ) {
       		print "Error de Twits [$err ]\n	";
      		die $@ unless blessed $err && $err->isa('Net::Twitter::Error');
-     		$query = "update twits set estado=\"ing\", errorpublicar=1 where idtwits=\"$id\"";
+     		$query = "update twits_hashtag set estado=\"ing\", errorpublicar=1 where idtwits=\"$id\"";
 			#printf "Actualiza estado Twits en tabla [%s]\n",$query;
 			$sth_update = $connection->prepare($query);
 			$sth_update->execute();
@@ -154,12 +157,13 @@ sub registraTwits()
 		}
 		else
 		{
-			$query = "update twits set estado=\"twt\", errorpublicar=0 where idtwits=\"$id\"";
+			#$query = "update twits_hashtag set estado=\"twt\", errorpublicar=0 where idtwits=\"$id\"";
 			printf "Actualiza estado Twits en tabla [%s]\n",$query;
 			$sth_update = $connection->prepare($query);
-			$sth_update->execute();
-			$sth_update->finish;
-			my $result = $t->update($s);
+			#$sth_update->execute();
+			#$sth_update->finish;
+			print(Dumper($s));
+			#my $result = $t->update($s);
     	}
     	
 	}
@@ -199,7 +203,7 @@ $access_token_secret = $ARGV[4-1];
 &carga_ini();
 
 $dbh=&conecta_mysql();
-&registraTwits($dbh,$consumer_key,$consumer_secret,$access_token, access_token_secret);
+&registraTwits($dbh,$consumer_key,$consumer_secret,$access_token, $access_token_secret);
 &close_mysql($dbh);
 
 
