@@ -1,13 +1,14 @@
 #use Encode;
-use Scalar::Util 'blessed';
+use Scalar::Util qw/blessed/;
 use Net::Twitter;
 use Data::Dumper;
 use DBI;
 use DB_File;
 use DateTime;
-use Encode qw/encode_utf8/;
+use Encode qw/decode encode_utf8 decode_utf8/;
 use Config::Simple;
 use IO::Socket::SSL;
+use Try::Tiny;
 
 
 $, = "\t", $\ = "\n";
@@ -111,8 +112,9 @@ sub registraTwits()
 	#Se armo especialmente para Huelga entel 
 	#$query = "select idtwits, descTwits from twits as t,usuarios as u where t.usuarios_nickName=u.nickName and u.monitoreo=1 and  descTwits like \"%copa%\" and estado!=\"pub\" and errorpublicar is null";
 	
-	$query = "select idtwits, descTwits from twits_hashtag as t where t.estado=\"pub\" and errorpublicar is null";
+	$query = "select idtwits, descTwits from twits_hashtag as t where t.estado=\"pub\" and (errorpublicar is null or errorpublicar=0)  ";
 	
+	print(Dumper($query));
 	
 	$sth = $connection->prepare($query);
 	
@@ -127,45 +129,36 @@ sub registraTwits()
 		#$s =~ s/[^[:ascii:]]+//g;      # Strip Non-ASCII Encoded Characters
     	#$s =~ s/"/\\"/g;               # Strip Non-ASCII Encoded Characters
     	#$s =~ s/'/\\'/g;               # Strip Non-ASCII Encoded Characters
-		$s=Encode::encode("utf8", $s);
-    	$s=&trim($s);
-    	if (&esRT($s) == 1)
-    	{
-    		$posi_chr=index($s,":");
-    		$s=substr($s,$posi_chr+1);
-    	}
-    	
-    	$largo_str=length($s);
-    	$marca="#SOMOSBIGDATA ";
-    	if ($largo_str<100-length($marca))
-    	{
-    	   $s=$marca.$s;
-    	}
-    	#$s = encode('utf-8',$s);
 		
-    	printf("Postea %s: [%s] : %d\n",$id,$s,$largo_str);
+		#$s = encode('utf-8',$s);
+    	#$s=&trim($s);
+		$s=Encode::encode("utf8", $s);
+		$s=Encode::decode("utf8", $s);
     	
-    	if ( my $err = $@ ) {
-      		print "Error de Twits [$err ]\n	";
-     		die $@ unless blessed $err && $err->isa('Net::Twitter::Error');
-     		$query = "update twits_hashtag set estado=\"ing\", errorpublicar=1 where idtwits=\"$id\"";
+    	
+    	#printf("Postea %s: [%s] : %d\n",$id,$s,$largo_str);
+    	
+		my $result = try {
+			$t->update($s);
+			$query = "update twits_hashtag set estado=\"twt\", errorpublicar=0 where idtwits=\"$id\"";
 			#printf "Actualiza estado Twits en tabla [%s]\n",$query;
 			$sth_update = $connection->prepare($query);
 			$sth_update->execute();
 			$sth_update->finish;
-			
 		}
-		else
-		{
-			#$query = "update twits_hashtag set estado=\"twt\", errorpublicar=0 where idtwits=\"$id\"";
-			printf "Actualiza estado Twits en tabla [%s]\n",$query;
+		catch {
+			die $_ unless blessed($_) && $_->isa('Net::Twitter::Error');
+			
+			printf("HTTP Response Code: %s\n", $_->code);
+			printf("HTTP Message......: %s\n", $_->message);
+         	printf("Twitter error.....: %s\n", $_->error);
+         	#printf("Stack Trace.......: %s\n", $_->stack_trace->as_string);
+     		$query = "update twits_hashtag set estado=\"err\", errorpublicar=1 where idtwits=\"$id\"";
 			$sth_update = $connection->prepare($query);
-			#$sth_update->execute();
-			#$sth_update->finish;
-			print(Dumper($s));
-			#my $result = $t->update($s);
-    	}
-    	
+			$sth_update->execute();
+			$sth_update->finish;
+			
+		}    	
 	}
 	$sth->finish;
 		
@@ -182,7 +175,10 @@ sub conecta_mysql()
 	#connect to MySQL database
 	my $dbh   = DBI->connect ("DBI:mysql:database=$db:host=$host",
     	                       $user,
-        	                   $password) 
+        	                   $password,
+     							{
+         							mysql_enable_utf8 => 1
+     							}) 
             	               or die "Can't connect to database: $DBI::errstr\n";
 
 	return $dbh;
